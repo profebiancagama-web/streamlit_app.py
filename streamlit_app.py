@@ -1,136 +1,87 @@
 import streamlit as st
-import random
-import os
 
 # --- CONFIGURAÇÃO DA TELA ---
-st.set_page_config(page_title="Estacionamento das Cores", page_icon="🚌", layout="centered")
+st.set_page_config(page_title="Missão Yuri: Desvio Espacial!", page_icon="🚌", layout="centered")
 
-# =========================================================
-# ✏️ CONFIGURAÇÃO DO NOME DO SEU FILHO (ATUALIZADO!)
-NOME_DO_FILHO = "Yuri"
-# =========================================================
-
-# --- INICIALIZAÇÃO DO ESTADO DO JOGO ---
-if "cor_atual" not in st.session_state:
-    st.session_state.cor_atual = random.choice(["AZUL", "AMARELO"])
-
-# --- LÓGICA DE VERIFICAÇÃO (Captura o clique do JavaScript) ---
-parametros = st.query_params
-if "clique" in parametros:
-    cor_clicada = parametros["clique"]
-    st.query_params.clear()
-    
-    if cor_clicada == st.session_state.cor_atual:
-        st.markdown("<h1 style='text-align:center; font-size:60px; color:#10b981; font-family:Comic Sans MS;'>🌟 PARABÉNS! 🌟</h1>", unsafe_allow_html=True)
-        st.balloons()
-        st.session_state.cor_atual = random.choice(["AZUL", "AMARELO"])
-        import time
-        time.sleep(1.0)
-        st.rerun()
-
-# --- CORES E CONFIGURAÇÕES VISUAIS DA RODADA ---
-if st.session_state.cor_atual == "AZUL":
-    cor_codigo = "#1d4ed8"
-    classe_nome = "color: #1d4ed8;"
-else:
-    cor_codigo = "#eab308"
-    classe_nome = "color: #eab308;"
-
-# --- ESTILIZAÇÃO DO JOGO (Visual Limpo e Sem Botões de Sistema) ---
+# Injeta o jogo em JavaScript e HTML5 direto na tela do Streamlit
 st.markdown(
-    f"""
+    """
     <style>
-    .stApp {{ background-color: #ffffff; }}
-    .titulo-jogo {{ text-align: center; color: #64748b; font-family: 'Comic Sans MS', sans-serif; font-size: 20px; }}
-    .nome-crianca {{ text-align: center; font-family: 'Comic Sans MS', sans-serif; font-size: 50px; font-weight: bold; margin-top: -10px; margin-bottom: 15px; {classe_nome} }}
+    /* Esconde as coisas do Streamlit para focar só no jogo */
+    #MainMenu, footer, header { visibility: hidden; }
+    .stApp { background-color: #0f172a; text-align: center; }
     
-    /* Moldura Controlada da Foto */
-    .moldura-foto {{
-        display: block;
-        margin: 0 auto;
-        width: 180px;
-        height: 180px;
-        border: 12px solid {cor_codigo};
-        border-radius: 30px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        object-fit: cover;
-    }}
+    .titulo {
+        color: #38bdf8;
+        font-family: 'Comic Sans MS', sans-serif;
+        font-size: 28px;
+        font-weight: bold;
+        margin-top: 10px;
+        margin-bottom: 5px;
+    }
     
-    /* Bloco reserva caso a foto não carregue */
-    .avatar-reserva {{
+    /* Caixa do Jogo */
+    #canvasContainer {
         display: flex;
         justify-content: center;
         align-items: center;
         margin: 0 auto;
-        width: 180px;
-        height: 180px;
-        background-color: {cor_codigo};
-        border-radius: 30px;
-        font-size: 80px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    }}
+    }
+    
+    canvas {
+        background-color: #1e293b;
+        border: 4px solid #38bdf8;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        display: block;
+        touch-action: none; /* Impede o celular de puxar a página para baixo ao jogar */
+    }
 
-    /* Container dos Ônibus */
-    .estacionamento-container {{
+    /* Botões de controle para o celular */
+    .controles {
         display: flex;
         justify-content: center;
-        gap: 30px;
-        margin-top: 40px;
-    }}
-
-    /* Os Ônibus Reais de Toque Direto */
-    .onibus-link {{
-        text-decoration: none !important;
-        -webkit-tap-highlight-color: transparent;
-    }}
-    .onibus-azul {{
-        background-color: #1d4ed8;
-        font-size: 50px;
-        padding: 15px 35px;
-        border-radius: 20px;
-        box-shadow: 0 8px 15px rgba(29, 78, 216, 0.3);
-        display: inline-block;
-    }}
-    .onibus-amarelo {{
-        background-color: #eab308;
-        font-size: 50px;
-        padding: 15px 35px;
-        border-radius: 20px;
-        box-shadow: 0 8px 15px rgba(234, 179, 8, 0.3);
-        display: inline-block;
-    }}
+        gap: 40px;
+        margin-top: 15px;
+    }
     
-    /* Oculta barras do Streamlit */
-    #MainMenu, footer, header {{visibility: hidden;}}
+    .btn-jogo {
+        background-color: #38bdf8;
+        color: white;
+        font-size: 35px;
+        border: none;
+        padding: 15px 40px;
+        border-radius: 15px;
+        box-shadow: 0 5px 10px rgba(56, 189, 248, 0.3);
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .btn-jogo:active { background-color: #0284c7; }
     </style>
-    """,
-    unsafe_allow_html=True
-)
 
-# --- CORPO INTERATIVO EM HTML PURO ---
-st.markdown("<div class='titulo-jogo'>Estacionamento das Cores</div>", unsafe_allow_html=True)
-st.markdown(f"<div class='nome-crianca'>{NOME_DO_FILHO}</div>", unsafe_allow_html=True)
-
-# Exibe a foto ou o avatar reserva
-if os.path.exists("filho.jpg"):
-    import base64
-    with open("filho.jpg", "rb") as img_file:
-        img_base64 = base64.b64encode(img_file.read()).decode()
-    st.markdown(f"<img src='data:image/jpeg;base64,{img_base64}' class='moldura-foto'>", unsafe_allow_html=True)
-else:
-    st.markdown("<div class='avatar-reserva'>👦</div>", unsafe_allow_html=True)
-
-# Os Ônibus de toque instantâneo
-st.markdown(
-    """
-    <div class='estacionamento-container'>
-        <a href='?clique=AZUL' target='_self' class='onibus-link'>
-            <div class='onibus-azul'>🚌</div>
-        </a>
-        <a href='?clique=AMARELO' target='_self' class='onibus-link'>
-            <div class='onibus-amarelo'>🚌</div>
-        </a>
+    <div class="titulo">🚌 PILOTO YURI: DESVIE! 🦠</div>
+    
+    <div id="canvasContainer">
+        <canvas id="gameCanvas" width="320" height="400"></canvas>
     </div>
-    """,
-    unsafe_allow_html=True
-)
+
+    <div class="controles">
+        <button class="btn-jogo" id="btnEsquerda" onmousedown="moverEsquerda()" ontouchstart="moverEsquerda()">◀️</button>
+        <button class="btn-jogo" id="btnDireita" onmousedown="moverDireita()" ontouchstart="moverDireita()">▶️</button>
+    </div>
+
+    <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Configurações do jogo
+    let jogador = { x: 135, y: 330, largura: 50, altura: 50, velocidade: 25 };
+    let obstaculos = [];
+    let pontuacao = 0;
+    let jogoAtivo = true;
+    
+    // Lista de emojis que vão cair (bactérias, vírus e pedras)
+    const emojisObstaculos = ["🦠", "👾", "🪨", "🦠"];
+
+    // Desenha o jogo
