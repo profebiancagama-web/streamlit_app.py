@@ -5,94 +5,132 @@ import os
 # --- CONFIGURAÇÃO DA TELA ---
 st.set_page_config(page_title="Estacionamento das Cores", page_icon="🚌", layout="centered")
 
-# CSS para sumir com botões feios de computador e focar só no desenho e na cor
-st.markdown(
-    """
-    <style>
-    .stApp { background-color: #ffffff; }
-    
-    /* Título e Nome */
-    .titulo-jogo { text-align: center; color: #64748b; font-family: 'Comic Sans MS', sans-serif; font-size: 24px; }
-    .nome-crianca { text-align: center; font-family: 'Comic Sans MS', sans-serif; font-size: 55px; font-weight: bold; margin-top: -10px; }
-    
-    /* Cores do Nome */
-    .nome-azul { color: #1d4ed8; }
-    .nome-amarelo { color: #eab308; }
+# =========================================================
+# ✏️ CONFIGURAÇÃO DO NOME DO SEU FILHO (ATUALIZADO!)
+NOME_DO_FILHO = "Yuri"
+# =========================================================
 
-    /* Estilo dos Ônibus Desenhados (Botões Invisíveis por trás, Visual Puro por fora) */
-    .div-onibus-azul { background-color: #1d4ed8; font-size: 90px; text-align: center; padding: 20px; border-radius: 30px; box-shadow: 0 15px 25px rgba(29, 78, 216, 0.4); cursor: pointer; }
-    .div-onibus-amarelo { background-color: #eab308; font-size: 90px; text-align: center; padding: 20px; border-radius: 30px; box-shadow: 0 15px 25px rgba(234, 179, 8, 0.4); cursor: pointer; }
+# --- INICIALIZAÇÃO DO ESTADO DO JOGO ---
+if "cor_atual" not in st.session_state:
+    st.session_state.cor_atual = random.choice(["AZUL", "AMARELO"])
+
+# --- LÓGICA DE VERIFICAÇÃO (Captura o clique do JavaScript) ---
+parametros = st.query_params
+if "clique" in parametros:
+    cor_clicada = parametros["clique"]
+    st.query_params.clear()
     
-    /* Esconde o texto padrão do botão do streamlit */
-    .stButton > button { background: transparent !important; border: none !important; width: 100% !important; height: 100% !important; padding: 0 !important; }
-    .stButton > button:hover { background: transparent !important; }
+    if cor_clicada == st.session_state.cor_atual:
+        st.markdown("<h1 style='text-align:center; font-size:60px; color:#10b981; font-family:Comic Sans MS;'>🌟 PARABÉNS! 🌟</h1>", unsafe_allow_html=True)
+        st.balloons()
+        st.session_state.cor_atual = random.choice(["AZUL", "AMARELO"])
+        import time
+        time.sleep(1.0)
+        st.rerun()
+
+# --- CORES E CONFIGURAÇÕES VISUAIS DA RODADA ---
+if st.session_state.cor_atual == "AZUL":
+    cor_codigo = "#1d4ed8"
+    classe_nome = "color: #1d4ed8;"
+else:
+    cor_codigo = "#eab308"
+    classe_nome = "color: #eab308;"
+
+# --- ESTILIZAÇÃO DO JOGO (Visual Limpo e Sem Botões de Sistema) ---
+st.markdown(
+    f"""
+    <style>
+    .stApp {{ background-color: #ffffff; }}
+    .titulo-jogo {{ text-align: center; color: #64748b; font-family: 'Comic Sans MS', sans-serif; font-size: 20px; }}
+    .nome-crianca {{ text-align: center; font-family: 'Comic Sans MS', sans-serif; font-size: 50px; font-weight: bold; margin-top: -10px; margin-bottom: 15px; {classe_nome} }}
     
-    .mensagem-sucesso { font-size: 60px; text-align: center; color: #10b981; font-family: 'Comic Sans MS', sans-serif; font-weight: bold; margin-top: 20px; }
+    /* Moldura Controlada da Foto */
+    .moldura-foto {{
+        display: block;
+        margin: 0 auto;
+        width: 180px;
+        height: 180px;
+        border: 12px solid {cor_codigo};
+        border-radius: 30px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        object-fit: cover;
+    }}
+    
+    /* Bloco reserva caso a foto não carregue */
+    .avatar-reserva {{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 auto;
+        width: 180px;
+        height: 180px;
+        background-color: {cor_codigo};
+        border-radius: 30px;
+        font-size: 80px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }}
+
+    /* Container dos Ônibus */
+    .estacionamento-container {{
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin-top: 40px;
+    }}
+
+    /* Os Ônibus Reais de Toque Direto */
+    .onibus-link {{
+        text-decoration: none !important;
+        -webkit-tap-highlight-color: transparent;
+    }}
+    .onibus-azul {{
+        background-color: #1d4ed8;
+        font-size: 50px;
+        padding: 15px 35px;
+        border-radius: 20px;
+        box-shadow: 0 8px 15px rgba(29, 78, 216, 0.3);
+        display: inline-block;
+    }}
+    .onibus-amarelo {{
+        background-color: #eab308;
+        font-size: 50px;
+        padding: 15px 35px;
+        border-radius: 20px;
+        box-shadow: 0 8px 15px rgba(234, 179, 8, 0.3);
+        display: inline-block;
+    }}
+    
+    /* Oculta barras do Streamlit */
+    #MainMenu, footer, header {{visibility: hidden;}}
     </style>
     """,
     unsafe_allow_html=True
 )
 
-st.markdown("<div class='titulo-jogo'>Estacionamento das Cores 🚌</div>", unsafe_allow_html=True)
+# --- CORPO INTERATIVO EM HTML PURO ---
+st.markdown("<div class='titulo-jogo'>Estacionamento das Cores</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='nome-crianca'>{NOME_DO_FILHO}</div>", unsafe_allow_html=True)
 
-# =========================================================
-# ✏️ CONFIGURAÇÃO DO NOME DO SEU FILHO:
-NOME_DO_FILHO = "Yuri"
-# =========================================================
+# Exibe a foto ou o avatar reserva
+if os.path.exists("filho.jpg"):
+    import base64
+    with open("filho.jpg", "rb") as img_file:
+        img_base64 = base64.b64encode(img_file.read()).decode()
+    st.markdown(f"<img src='data:image/jpeg;base64,{img_base64}' class='moldura-foto'>", unsafe_allow_html=True)
+else:
+    st.markdown("<div class='avatar-reserva'>👦</div>", unsafe_allow_html=True)
 
-# --- INICIALIZAÇÃO DO JOGO ---
-if "cor_atual" not in st.session_state:
-    st.session_state.cor_atual = random.choice(["AZUL", "AMARELO"])
-if "acertou" not in st.session_state:
-    st.session_state.acertou = False
-
-# --- EXIBIÇÃO DO NOME GIGANTE ---
-classe_nome = "nome-azul" if st.session_state.cor_atual == "AZUL" else "nome-amarelo"
-st.markdown(f"<div class='nome-crianca {classe_nome}'>{NOME_DO_FILHO}</div>", unsafe_allow_html=True)
-
-# --- FOTO CENTRAL COM MOLDURA FORTE ---
-col_foto_centro, _ = st.columns([1, 0.01])
-with col_foto_centro:
-    if os.path.exists("filho.jpg"):
-        st.image("filho.jpg", use_container_width=True)
-        if st.session_state.cor_atual == "AZUL":
-            st.markdown("<style>img { border: 20px solid #1d4ed8; border-radius: 40px; }</style>", unsafe_allow_html=True)
-        else:
-            st.markdown("<style>img { border: 20px solid #eab308; border-radius: 40px; }</style>", unsafe_allow_html=True)
-    else:
-        # Bloco reserva caso a foto não carregue
-        if st.session_state.cor_atual == "AZUL":
-            st.markdown("<div style='background:#1d4ed8; height:200px; border-radius:30px; text-align:center; line-height:200px; font-size:80px;'>👦</div>", unsafe_allow_html=True)
-        else:
-            st.markdown("<div style='background:#eab308; height:200px; border-radius:30px; text-align:center; line-height:200px; font-size:80px;'>👦</div>", unsafe_allow_html=True)
-
-st.write(" ")
-st.write(" ")
-
-# --- OS DOIS ÔNIBUS GIGANTES (ÁREA DE CLIQUE) ---
-col1, col2 = st.columns(2)
-
-with col1:
-    # Cria o visual do Ônibus Azul gigante
-    st.markdown("<div class='div-onibus-azul'>🚌</div>", unsafe_allow_html=True)
-    # Coloca o clique invisível em cima dele
-    if st.button("", key="clique_azul"):
-        if st.session_state.cor_atual == "AZUL":
-            st.session_state.acertou = True
-
-with col2:
-    # Cria o visual do Ônibus Amarelo gigante
-    st.markdown("<div class='div-onibus-amarelo'>🚌</div>", unsafe_allow_html=True)
-    # Coloca o clique invisível em cima dele
-    if st.button("", key="clique_amarelo"):
-        if st.session_state.cor_atual == "AMARELO":
-            st.session_state.acertou = True
-
-# --- TELA DE SUCESSO ---
-if st.session_state.acertou:
-    st.markdown("<div class='mensagem-sucesso'>🌟 PARABÉNS! 🌟</div>", unsafe_allow_html=True)
-    st.session_state.cor_atual = random.choice(["AZUL", "AMARELO"])
-    st.session_state.acertou = False
-    import time
-    time.sleep(1.3)
-    st.rerun()
+# Os Ônibus de toque instantâneo
+st.markdown(
+    """
+    <div class='estacionamento-container'>
+        <a href='?clique=AZUL' target='_self' class='onibus-link'>
+            <div class='onibus-azul'>🚌</div>
+        </a>
+        <a href='?clique=AMARELO' target='_self' class='onibus-link'>
+            <div class='onibus-amarelo'>🚌</div>
+        </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
