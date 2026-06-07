@@ -3,68 +3,19 @@ import os
 import base64
 
 # --- CONFIGURAÇÃO DA TELA ---
-st.set_page_config(page_title="Missão Yuri: Desvio Espacial!", page_icon="🚌", layout="centered")
+st.set_page_config(page_title="Jogo do Yuri", page_icon="🚌", layout="centered")
 
-# Transforma a foto filho.jpg em formato que o jogo entende
+# Carrega a foto do Yuri de um jeito mais seguro
 imagem_base64 = ""
 if os.path.exists("filho.jpg"):
-    with open("filho.jpg", "rb") as img_file:
-        imagem_base64 = base64.b64encode(img_file.read()).decode()
+    try:
+        with open("filho.jpg", "rb") as img_file:
+            imagem_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+    except Exception:
+        pass
 
-# Código do jogo totalmente isolado como texto puro para o Python não dar erro
-codigo_do_jogo = """
-<style>
-/* Oculta as barras do Streamlit */
-#MainMenu, footer, header { visibility: hidden; }
-.stApp { background-color: #0f172a; text-align: center; }
-
-.titulo {
-    color: #38bdf8;
-    font-family: 'Comic Sans MS', sans-serif;
-    font-size: 28px;
-    font-weight: bold;
-    margin-top: 10px;
-    margin-bottom: 5px;
-}
-
-#canvasContainer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 auto;
-}
-
-canvas {
-    background-color: #1e293b;
-    border: 4px solid #38bdf8;
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    display: block;
-    touch-action: none;
-}
-
-.controles {
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    margin-top: 15px;
-}
-
-.btn-jogo {
-    background-color: #38bdf8;
-    color: white;
-    font-size: 35px;
-    border: none;
-    padding: 15px 40px;
-    border-radius: 15px;
-    box-shadow: 0 5px 10px rgba(56, 189, 248, 0.3);
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-}
-.btn-jogo:active { background-color: #0284c7; }
-</style>
-
+# Todo o jogo empacotado para rodar direto no celular sem travar
+html_jogo = f"""
 <div class="titulo">🚌 PILOTO YURI: DESVIE! 🦠</div>
 
 <div id="canvasContainer">
@@ -72,152 +23,187 @@ canvas {
 </div>
 
 <div class="controles">
-    <button class="btn-jogo" id="btnEsquerda" onmousedown="moverEsquerda()" ontouchstart="moverEsquerda()">◀️</button>
-    <button class="btn-jogo" id="btnDireita" onmousedown="moverDireita()" ontouchstart="moverDireita()">▶️</button>
+    <button class="btn-jogo" id="btnEsquerda">◀️</button>
+    <button class="btn-jogo" id="btnDireita">▶️</button>
 </div>
 
+<style>
+#MainMenu, footer, header {{ visibility: hidden; }}
+.stApp {{ background-color: #0f172a; text-align: center; }}
+
+.titulo {{
+    color: #38bdf8;
+    font-family: 'Comic Sans MS', sans-serif;
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 10px;
+    margin-bottom: 15px;
+}}
+
+#canvasContainer {{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+}}
+
+canvas {{
+    background-color: #1e293b;
+    border: 4px solid #38bdf8;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    display: block;
+    touch-action: none;
+}}
+
+.controles {{
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 20px;
+}}
+
+.btn-jogo {{
+    background-color: #38bdf8;
+    color: white;
+    font-size: 35px;
+    border: none;
+    padding: 15px 45px;
+    border-radius: 15px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}}
+.btn-jogo:active {{ background-color: #0284c7; }}
+</style>
+
 <script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+(function() {{
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-// Tenta carregar a foto do Yuri para o fundo
-const fotoFundo = new Image();
-let temFoto = false;
+    // Configurações do Yuri e dos obstáculos
+    let jogador = {{ x: 135, y: 330, largura: 50, altura: 50, velocidade: 25 }};
+    let obstaculos = [];
+    let pontuacao = 0;
+    let jogoAtivo = true;
+    const emojis = ["🦠", "👾", "🪨"];
 
-const imgData = "__IMAGEM_PLACEHOLDER__";
-if (imgData !== "") {
-    fotoFundo.src = "data:image/jpeg;base64," + imgData;
-    fotoFundo.onload = function() {
-        temFoto = true;
-    };
-}
+    // Puxa a foto do fundo se ela existir
+    const fotoFundo = new Image();
+    let temFoto = false;
+    const imgStr = "{imagem_base64}";
+    
+    if (imgStr !== "") {{
+        fotoFundo.src = "data:image/jpeg;base64," + imgStr;
+        fotoFundo.onload = function() {{
+            temFoto = true;
+        }};
+    }}
 
-// Configurações do jogo
-let jogador = { x: 135, y: 330, largura: 50, altura: 50, velocidade: 25 };
-let obstaculos = [];
-let pontuacao = 0;
-let jogoAtivo = true;
+    function desenhar() {{
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-const emojisObstaculos = ["🦠", "👾", "🪨", "🦠"];
+        // Desenha a foto do Yuri no fundo
+        if (temFoto) {{
+            ctx.save();
+            ctx.globalAlpha = 0.40;
+            ctx.drawImage(fotoFundo, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }}
 
-function desenhar() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Se tiver a foto, desenha no fundo com opacidade suave
-    if (temFoto) {
-        ctx.save();
-        ctx.globalAlpha = 0.35;
-        ctx.drawImage(fotoFundo, 0, 0, canvas.width, canvas.height);
-        ctx.restore();
-    }
-
-    // Desenha o Ônibus do Yuri
-    ctx.font = "45px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("🚌", jogador.x + 25, jogador.y + 25);
-
-    // Desenha os obstáculos caindo
-    for (let i = 0; i < obstaculos.length; i++) {
-        let obs = obstaculos[i];
-        obs.y += obs.velocidade;
-
-        ctx.font = "35px Arial";
-        ctx.fillText(obs.emoji, obs.x + 15, obs.y + 15);
-
-        // Verifica colisão
-        if (obs.x < jogador.x + jogador.largura &&
-            obs.x + 30 > jogador.x &&
-            obs.y < jogador.y + jogador.altura &&
-            obs.y + 30 > jogador.y) {
-            jogoAtivo = false;
-        }
-
-        if (obs.y > canvas.height) {
-            pontuacao += 1;
-            obstaculos.splice(i, 1);
-            i--;
-        }
-    }
-
-    // Placar
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 20px 'Comic Sans MS'";
-    ctx.textAlign = "left";
-    ctx.fillText("Pontos: " + pontuacao, 15, 25);
-
-    // Game Over
-    if (!jogoAtivo) {
-        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.fillStyle = "#ef4444";
-        ctx.font = "bold 32px 'Comic Sans MS'";
+        // Desenha o Ônibus
+        ctx.font = "45px Arial";
         ctx.textAlign = "center";
-        ctx.fillText("BATEU! 💥", canvas.width / 2, canvas.height / 2 - 30);
-        
+        ctx.textBaseline = "middle";
+        ctx.fillText("🚌", jogador.x + 25, jogador.y + 25);
+
+        // Desenha e move os vírus caindo
+        for (let i = 0; i < obstaculos.length; i++) {{
+            let obs = obstaculos[i];
+            obs.y += obs.velocidade;
+
+            ctx.font = "35px Arial";
+            ctx.fillText(obs.emoji, obs.x + 15, obs.y + 15);
+
+            // Colisão
+            if (obs.x < jogador.x + jogador.largura &&
+                obs.x + 30 > jogador.x &&
+                obs.y < jogador.y + jogador.altura &&
+                obs.y + 30 > jogador.y) {{
+                jogoAtivo = false;
+            }}
+
+            // Ponto
+            if (obs.y > canvas.height) {{
+                pontuacao++;
+                obstaculos.splice(i, 1);
+                i--;
+            }}
+        }}
+
+        // Placar
         ctx.fillStyle = "#ffffff";
-        ctx.font = "20px 'Comic Sans MS'";
-        ctx.fillText("Toque na tela para", canvas.width / 2, canvas.height / 2 + 10);
-        ctx.fillText("jogar de novo 🔄", canvas.width / 2, canvas.height / 2 + 35);
-        return;
+        ctx.font = "bold 20px 'Comic Sans MS'";
+        ctx.textAlign = "left";
+        ctx.fillText("Pontos: " + pontuacao, 15, 25);
+
+        if (!jogoAtivo) {{
+            ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ef4444";
+            ctx.font = "bold 32px 'Comic Sans MS'";
+            ctx.textAlign = "center";
+            ctx.fillText("BATEU! 💥", canvas.width / 2, canvas.height / 2 - 30);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "18px 'Comic Sans MS'";
+            ctx.fillText("Toque na tela para reiniciar 🔄", canvas.width / 2, canvas.height / 2 + 20);
+            return;
+        }}
+
+        requestAnimationFrame(desenhar);
     }
 
-    requestAnimationFrame(desenhar);
-}
+    function criarObstaculo() {{
+        if (!jogoAtivo) return;
+        let posicoesX = [25, 90, 155, 220, 270];
+        let xAleatorio = posicoesX[Math.floor(Math.random() * posicoesX.length)];
+        let emojiAleatorio = emojis[Math.floor(Math.random() * emojis.length)];
+        
+        obstaculos.push({{
+            x: xAleatorio,
+            y: -40,
+            emoji: emojiAleatorio,
+            velocidade: 4 + Math.random() * 3
+        }});
+        setTimeout(criarObstaculo, 1000);
+    }
 
-function gerarObstaculos() {
-    if (!jogoAtivo) return;
+    // Comandos de toque corrigidos para celular
+    document.getElementById("btnEsquerda").addEventListener("click", function() {{
+        if (jogoAtivo && jogador.x > 10) jogador.x -= jogador.velocidade;
+    }});
     
-    let posicoesX = [30, 95, 160, 225, 280];
-    let xAleatorio = posicoesX[Math.floor(Math.random() * posicoesX.length)];
-    let emojiAleatorio = emojisObstaculos[Math.floor(Math.random() * emojisObstaculos.length)];
-    let velAleatoria = 3 + Math.random() * 3;
-    
-    if (xAleatorio > canvas.width - 35) { xAleatorio = canvas.width - 45; }
+    document.getElementById("btnDireita").addEventListener("click", function() {{
+        if (jogoAtivo && jogador.x < canvas.width - 60) jogador.x += jogador.velocidade;
+    }});
 
-    obstaculos.push({
-        x: xAleatorio,
-        y: -40,
-        emoji: emojiAleatorio,
-        velocidade: velAleatoria
-    });
+    canvas.addEventListener("click", function() {{
+        if (!jogoAtivo) {{
+            jogador.x = 135;
+            obstaculos = [];
+            pontuacao = 0;
+            jogoAtivo = true;
+            desenhar();
+            criarObstaculo();
+        }}
+    }});
 
-    setTimeout(gerarObstaculos, 1100);
-}
-
-function moverEsquerda() {
-    if (jogoAtivo && jogador.x > 10) {
-        jogador.x -= jogador.velocidade;
-    }
-}
-
-function moverDireita() {
-    if (jogoAtivo && jogador.x < canvas.width - 60) {
-        jogador.x += jogador.velocidade;
-    }
-}
-
-window.addEventListener("keydown", function(e) {
-    if (e.key === "ArrowLeft") moverEsquerda();
-    if (e.key === "ArrowRight") moverDireita();
-});
-
-canvas.addEventListener("click", function() {
-    if (!jogoAtivo) {
-        jogador.x = 135;
-        obstaculos = [];
-        pontuacao = 0;
-        jogoAtivo = true;
-        desenhar();
-        gerarObstaculos();
-    }
-});
-
-desenhar();
-gerarObstaculos();
+    desenhar();
+    criarObstaculo();
+}})();
 </script>
-""".replace("__IMAGEM_PLACEHOLDER__", imagem_base64)
+"""
 
-# Renderiza o jogo na tela de forma limpa
-st.markdown(codigo_do_jogo, unsafe_allow_html=True)
+# Mostra o jogo na tela de forma direta e blindada
+st.components.v1.html(html_jogo, height=520, scrolling=False)
