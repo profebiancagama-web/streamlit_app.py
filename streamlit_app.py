@@ -37,7 +37,7 @@ st.markdown("<div class='titulo-jogo'>Estacionamento das Cores 🚌</div>", unsa
 
 # =========================================================
 # ✏️ CONFIGURAÇÃO DO NOME DO SEU FILHO:
-NOME_DO_FILHO = "Emanuel"
+NOME_DO_FILHO = "Yuri"
 # =========================================================
 
 # --- INICIALIZAÇÃO DO JOGO ---
